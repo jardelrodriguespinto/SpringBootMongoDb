@@ -1,10 +1,11 @@
 package org.example.springmongo.controller;
-import org.apache.logging.log4j.Logger;
+import org.example.springmongo.dto.TaskDTO;
 import org.example.springmongo.exception.GenericException;
 import org.example.springmongo.exception.TaskAlreadyExistException;
 import org.example.springmongo.exception.TaskNotFoundException;
 import org.example.springmongo.model.Task;
 import org.example.springmongo.service.TaskService;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,7 +18,7 @@ import java.util.Set;
 @RequestMapping("/api/v1")
 public class TaskController
 {
-    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory(TaskController.class);
+    private static final Logger log = LoggerFactory.getLogger(Task.class);
     private TaskService taskService;
 
     @Autowired
@@ -62,11 +63,16 @@ public class TaskController
     }
 
     @PostMapping("/addTask")
-    public ResponseEntity<Task> addTask(@RequestBody Task newTask)
+    public ResponseEntity<Task> addTask(@RequestBody TaskDTO newTaskDTO)
     {
         try
         {
-            //Criar dto
+            Task newTask = Task.builder()
+                               .id(newTaskDTO.id())
+                               .title(newTaskDTO.title())
+                               .description(newTaskDTO.description())
+                               .dueDate(newTaskDTO.dueDate())
+                               .build();
 
             Task task = taskService.addTask(newTask);
 
@@ -84,10 +90,17 @@ public class TaskController
     }
 
     @PutMapping("/modifyTask/{id}")
-    public ResponseEntity<Task> updateTask(@PathVariable String id, @RequestBody Task newTask)
+    public ResponseEntity<Task> updateTask(@PathVariable String id, @RequestBody TaskDTO newTaskDTO)
     {
         try
         {
+            Task newTask = Task.builder()
+                                .id(newTaskDTO.id())
+                                .title(newTaskDTO.title())
+                                .description(newTaskDTO.description())
+                                .dueDate(newTaskDTO.dueDate())
+                                .build();
+
             Task task = taskService.updateTask(id, newTask);
 
             return ResponseEntity.ok(task);
@@ -123,10 +136,17 @@ public class TaskController
     }
 
     @DeleteMapping("/deletetaskbynameanddescription")
-    public ResponseEntity<String> deleteTaskByTitleAndDescription(@RequestBody Task taskToDelete)
+    public ResponseEntity<String> deleteTaskByTitleAndDescription(@RequestBody TaskDTO taskDTO)
     {
         try
         {
+            Task taskToDelete = Task.builder()
+                                    .id(taskDTO.id())
+                                    .title(taskDTO.title())
+                                    .description(taskDTO.description())
+                                    .dueDate(taskDTO.dueDate())
+                                    .build();
+
             taskService.deleteTaskByTitleAndDescription(taskToDelete);
 
             return ResponseEntity.ok("task deleted successfully");

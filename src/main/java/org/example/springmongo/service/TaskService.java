@@ -1,5 +1,6 @@
 package org.example.springmongo.service;
 
+import org.example.springmongo.exception.TaskAlreadyExistException;
 import org.example.springmongo.exception.TaskNotFoundException;
 import org.example.springmongo.model.Task;
 import org.example.springmongo.repository.TaskRepository;
@@ -37,9 +38,10 @@ public class TaskService {
         Optional<Task> task = taskRepository.findTaskByTitleAAndDescription(
                 newTask.getTitle(),newTask.getDescription());
 
-        task.ifPresentOrElse(t -> taskRepository.save(task.get()), TaskNotFoundException::new);
+        if (task.isPresent())
+            throw new TaskAlreadyExistException();
 
-        return task.get();
+        return taskRepository.save(newTask);
     }
 
     public Task updateTask(String id, Task newTask)
