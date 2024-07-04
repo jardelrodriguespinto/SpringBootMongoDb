@@ -1,5 +1,6 @@
 package org.example.springmongo.service;
 
+import org.example.springmongo.exception.TaskNotFoundException;
 import org.example.springmongo.model.Task;
 import org.example.springmongo.repository.TaskRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,6 +9,7 @@ import org.springframework.stereotype.Service;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 
 @Service
 public class TaskService {
@@ -15,14 +17,14 @@ public class TaskService {
     private TaskRepository taskRepository;
 
     @Autowired
-    public void TaskRepository(TaskRepository taskRepository)
+    public void taskRepository(TaskRepository taskRepository)
     {
         this.taskRepository = taskRepository;
     }
 
     public Task findTaskById(String id)
     {
-        return taskRepository.findById(id).orElse(null);
+        return taskRepository.findById(id).orElseThrow(TaskNotFoundException::new);
     }
 
     public Set<Task> findAllTasks()
@@ -35,28 +37,26 @@ public class TaskService {
         Optional<Task> task = taskRepository.findTaskByTitleAAndDescription(
                 newTask.getTitle(),newTask.getDescription());
 
-        if (! task.isPresent())
-        {
-            taskRepository.save(newTask);
-        }
+        task.ifPresentOrElse(t -> taskRepository.save(task.get()), TaskNotFoundException::new);
 
-        return null;
+        return task.get();
     }
 
     public Task updateTask(String id, Task newTask)
     {
-        Optional<Task> task = taskRepository.findById(id);
+        Optional<Task> foundTask = taskRepository.findById(id);
 
-        if (task.isPresent())
+        Consumer<Task> modifyAndSave = task ->
         {
-            task.get().setTitle(newTask.getTitle());
-            task.get().setDescription(newTask.getDescription());
-            task.get().setDueDate(newTask.getDueDate());
+            task.setTitle(newTask.getTitle());
+            task.setDescription(newTask.getDescription());
+            task.setDueDate(newTask.getDueDate());
+            taskRepository.save(task);
+        };
 
-            taskRepository.save(task.get());
-        }
+        foundTask.ifPresentOrElse(modifyAndSave, TaskNotFoundException::new);
 
-        return task.get();
+        return foundTask.get();
     }
 
     public void deleteTaskById(String id)
